@@ -59,4 +59,16 @@ class PesananPembeli {
 
     return response as List<Map<String, dynamic>>;
   }
+
+   Future<void> updateOrderStatus(int orderId, String newStatus) async {
+    try {
+      await _client
+          .from('pesanan')
+          .update({'status': newStatus})
+          .eq('id', orderId); // Targetkan pesanan dengan ID yang spesifik
+    } catch (e) {
+      print('Error updating order status: $e');
+      throw Exception('Gagal memperbarui status pesanan.');
+    }
+  }
 }

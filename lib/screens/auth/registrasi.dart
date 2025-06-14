@@ -33,7 +33,6 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
   // --- PERUBAHAN DI SINI: Buat fungsi untuk menangani registrasi ---
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isLoading = true);
 
     try {
@@ -42,20 +41,18 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
         password: _passwordController.text.trim(),
       );
 
-      // Tampilkan pesan sukses dan kembali ke halaman login setelah berhasil
+      // Blok ini HANYA akan berjalan jika KEDUA langkah di AuthService berhasil
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Registrasi berhasil! Silakan periksa email Anda untuk verifikasi.',
-            ),
+            content: Text('Registrasi berhasil! Silakan login.'),
             backgroundColor: Colors.green,
           ),
         );
         Navigator.pop(context); // Kembali ke halaman login
       }
     } catch (e) {
-      // Tampilkan pesan error jika registrasi gagal
+      // Blok ini akan berjalan jika SALAH SATU langkah di AuthService gagal
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -70,6 +67,7 @@ class _RegistrasiPageState extends State<RegistrasiPage> {
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

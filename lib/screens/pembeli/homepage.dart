@@ -23,7 +23,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _productsFuture = _productService.fetchProducts();
+    _productsFuture = _productService.getProducts();
   }
 
   @override

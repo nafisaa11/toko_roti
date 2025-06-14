@@ -105,7 +105,6 @@ class Product {
       'link_foto': linkFoto,
       'is_new': isNew,
       'created_at': createdAt?.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
     };
   }
 
@@ -119,7 +118,6 @@ class Product {
       'komposisi': komposisi,
       'deskripsi': deskripsi,
       'link_foto': linkFoto,
-      'is_new': isNew,
     };
   }
 
@@ -133,8 +131,6 @@ class Product {
       'komposisi': komposisi,
       'deskripsi': deskripsi,
       'link_foto': linkFoto,
-      'is_new': isNew,
-      'updated_at': DateTime.now().toIso8601String(),
     };
   }
 

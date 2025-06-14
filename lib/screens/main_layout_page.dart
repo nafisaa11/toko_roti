@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:tokoku/screens/admin/admin_homepage.dart';
+import 'package:tokoku/screens/admin/admin_kelola_produk_page.dart';
+import 'package:tokoku/screens/admin/admin_profile_page.dart';
 import 'package:tokoku/screens/pembeli/homepage.dart';
 import 'package:tokoku/screens/pembeli/profile_page.dart';
 import 'package:tokoku/screens/pembeli/riwayat_pesanan_page.dart';
@@ -35,8 +37,8 @@ class _MainLayoutPageState extends State<MainLayoutPage> {
     if (role == 'admin') {
       _pages = [
         const AdminHomePage(), // Halaman daftar pesanan
-        const Center(child: Text('Kelola Produk (Admin)')), // Placeholder
-        const Center(child: Text('Profil Admin')), // Placeholder
+        const AdminKelolaProdukPage(), // Placeholder
+        const AdminProfilePage(), // Placeholder
       ];
       _navBarItems = const [
         BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Pesanan'),
