@@ -1,40 +1,32 @@
 // services/product_service.dart
 
+import 'dart:io'; // Import dart:io untuk menggunakan tipe data File
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:tokoku/models/product_model.dart'; // Pastikan path model ini benar
 
 class ProductService {
   final SupabaseClient _client = Supabase.instance.client;
 
-  /// Fungsi untuk mengambil semua produk dari tabel 'produk'.
-  /// Ini sudah benar dan tidak perlu diubah.
+  /// Mengambil semua produk dari database.
   Future<List<Product>> getProducts() async {
     try {
       final response = await _client
           .from('produk')
           .select()
           .order('created_at', ascending: false);
-
-      final List<Product> products =
-          response.map((json) => Product.fromJson(json)).toList();
-
-      return products;
+      return response.map((map) => Product.fromJson(map)).toList();
     } catch (e) {
-      print('Error fetching products: $e');
-      throw Exception('Gagal mengambil data produk dari server.');
+      print('Error getProducts: $e');
+      throw Exception('Gagal mengambil data produk.');
     }
   }
-
-  // --- [PENYESUAIAN] IMPLEMENTASI FUNGSI CRUD UNTUK ADMIN ---
 
   /// Menambahkan produk baru ke database.
   Future<void> addProduct(Product product) async {
     try {
-      // Menggunakan method toInsert() dari model Product Anda,
-      // yang secara otomatis hanya menyertakan field yang diperlukan untuk insert.
       await _client.from('produk').insert(product.toInsert());
     } catch (e) {
-      print('Error adding product: $e');
+      print('Error addProduct: $e');
       throw Exception('Gagal menambahkan produk baru.');
     }
   }
@@ -42,17 +34,12 @@ class ProductService {
   /// Mengupdate produk yang sudah ada di database.
   Future<void> updateProduct(Product product) async {
     try {
-      // Menggunakan method toUpdate() dari model Product Anda,
-      // yang menyertakan 'updated_at' dan field lain yang bisa diubah.
       await _client
           .from('produk')
           .update(product.toUpdate())
-          .eq(
-            'id',
-            product.id!,
-          ); // Klausa WHERE untuk menargetkan produk yang benar
+          .eq('id', product.id!);
     } catch (e) {
-      print('Error updating product: $e');
+      print('Error updateProduct: $e');
       throw Exception('Gagal memperbarui produk.');
     }
   }
@@ -60,16 +47,35 @@ class ProductService {
   /// Menghapus produk dari database berdasarkan ID-nya.
   Future<void> deleteProduct(int productId) async {
     try {
-      await _client
-          .from('produk')
-          .delete()
-          .eq(
-            'id',
-            productId,
-          ); // Klausa WHERE untuk menghapus produk yang benar
+      await _client.from('produk').delete().eq('id', productId);
     } catch (e) {
-      print('Error deleting product: $e');
+      print('Error deleteProduct: $e');
       throw Exception('Gagal menghapus produk.');
+    }
+  }
+
+  // --- INI FUNGSI YANG HILANG YANG MENYEBABKAN ERROR ---
+  /// Mengunggah gambar produk ke Supabase Storage dan mengembalikan URL publiknya.
+  Future<String> uploadProductImage(File imageFile) async {
+    try {
+      final String fileName =
+          '${DateTime.now().millisecondsSinceEpoch}.${imageFile.path.split('.').last}';
+
+      // [PERBAIKAN] Ubah 'public' menjadi 'cookies' sesuai nama folder Anda
+      final String filePath = '$fileName';
+
+      // Mengunggah file ke bucket 'product' di dalam folder 'cookies'
+      await _client.storage.from('products').upload(filePath, imageFile);
+
+      // Mengambil URL publik dari file yang baru diunggah
+      final String publicUrl = _client.storage
+          .from('products')
+          .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (e) {
+      print('Error uploading image: $e');
+      throw Exception('Gagal mengunggah gambar produk.');
     }
   }
 }

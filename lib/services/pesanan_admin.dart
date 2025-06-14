@@ -1,5 +1,6 @@
 // services/pesanan_service.dart
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:io';
 
 class PesananAdmin {
   final _client = Supabase.instance.client;
@@ -37,6 +38,29 @@ class PesananAdmin {
 
     // Mengembalikan hasil dalam bentuk Map
     return {'jumlahPesanan': jumlahPesanan, 'totalPendapatan': totalPendapatan};
+  }
+
+  Future<String> uploadProductImage(File imageFile) async {
+    try {
+      // Membuat nama file yang unik berdasarkan waktu saat ini
+      final String fileName =
+          '${DateTime.now().millisecondsSinceEpoch}.${imageFile.path.split('.').last}';
+      final String filePath =
+          'public/$fileName'; // Simpan di dalam folder 'public' di bucket
+
+      // Mengunggah file
+      await _client.storage.from('product').upload(filePath, imageFile);
+
+      // Mengambil URL publik dari file yang baru diunggah
+      final String publicUrl = _client.storage
+          .from('product')
+          .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (e) {
+      print('Error uploading image: $e');
+      throw Exception('Gagal mengunggah gambar produk.');
+    }
   }
 
   // Nanti kita akan tambahkan fungsi untuk pembeli di sini
