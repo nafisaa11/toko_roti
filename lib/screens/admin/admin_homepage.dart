@@ -17,6 +17,22 @@ class _AdminHomePageState extends State<AdminHomePage> {
   final PesananAdmin _pesananService = PesananAdmin();
   late Future<List<Map<String, dynamic>>> _futurePesanan;
 
+  Future<void> _navigateToDetail(Map<String, dynamic> pesanan) async {
+    // `push` sekarang akan 'menunggu' halaman detail ditutup
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => OrderDetailPage(pesanan: pesanan, userRole: 'admin'),
+      ),
+    );
+
+    // Jika hasil yang dikirim kembali adalah 'true', muat ulang data pesanan
+    if (result == true) {
+      _loadPesanan();
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -109,7 +125,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) => OrderDetailPage(pesanan: pesanan),
+                              (context) => OrderDetailPage(
+                                pesanan: pesanan,
+                                userRole: 'admin',
+                              ),
                         ),
                       );
                     },

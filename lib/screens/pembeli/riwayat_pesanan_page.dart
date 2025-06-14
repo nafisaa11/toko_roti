@@ -91,7 +91,7 @@ class _RiwayatPesananPageState extends State<RiwayatPesananPage> {
                         context,
                         MaterialPageRoute(
                           builder:
-                              (context) => OrderDetailPage(pesanan: pesanan),
+                              (context) => OrderDetailPage(pesanan: pesanan, userRole: 'pembeli'),
                         ),
                       );
                     },

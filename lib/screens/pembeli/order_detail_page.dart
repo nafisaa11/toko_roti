@@ -2,29 +2,82 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:tokoku/services/pesanan_pembeli.dart';
 
-class OrderDetailPage extends StatelessWidget {
+class OrderDetailPage extends StatefulWidget {
   final Map<String, dynamic> pesanan;
+  final String userRole; // Tambahkan parameter untuk mengetahui role pengguna
 
-  const OrderDetailPage({Key? key, required this.pesanan}) : super(key: key);
+  const OrderDetailPage({
+    Key? key,
+    required this.pesanan,
+    required this.userRole, // Jadikan wajib diisi
+  }) : super(key: key);
 
   @override
+  State<OrderDetailPage> createState() => _OrderDetailPageState();
+}
+
+class _OrderDetailPageState extends State<OrderDetailPage> {
+  final PesananPembeli _PesananPembeli = PesananPembeli();
+
+  // [PERBAIKAN] State untuk mengelola status
+  late String _currentStatus;
+  bool _isUpdatingStatus = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Inisialisasi status awal dari data yang diterima
+    _currentStatus = widget.pesanan['status'];
+  }
+
+  /// Fungsi untuk menangani perubahan status oleh admin
+  Future<void> _updateStatus(String? newStatus) async {
+    if (newStatus == null || newStatus == _currentStatus) return;
+
+    setState(() => _isUpdatingStatus = true);
+
+    try {
+      await _PesananPembeli.updateOrderStatus(widget.pesanan['id'], newStatus);
+      if (mounted) {
+        setState(() {
+          _currentStatus = newStatus;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Status pesanan berhasil diperbarui!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Gagal memperbarui status: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUpdatingStatus = false);
+    }
+  }
+
+   @override
   Widget build(BuildContext context) {
-    // Helper untuk format mata uang
     final formatCurrency = NumberFormat.currency(
       locale: 'id_ID',
       symbol: 'Rp ',
       decimalDigits: 0,
     );
-    // Helper untuk format tanggal
     final formatDate = DateFormat('d MMMM yyyy, HH:mm');
-
-    // Mengambil daftar item dari kolom JSONB
-    final List<dynamic> detailItems = pesanan['detail_pesanan'] ?? [];
+    final List<dynamic> detailItems = widget.pesanan['detail_pesanan'] ?? [];
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('Detail Pesanan #${pesanan['id']}'),
+        title: Text('Detail Pesanan #${widget.pesanan['id']}'),
         backgroundColor: const Color(0xFF8B4513),
       ),
       body: SingleChildScrollView(
@@ -33,37 +86,93 @@ class OrderDetailPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildSectionTitle('Informasi Pesanan'),
-            _buildInfoCard(
-              'Status',
-              pesanan['status'].toString().replaceAll('_', ' ').toUpperCase(),
-              Icons.info_outline,
-            ),
+
+            // [PERBAIKAN] Tampilkan dropdown untuk admin, atau teks biasa untuk pembeli
+            _buildStatusSection(),
+
             _buildInfoCard(
               'Tanggal Pesanan',
-              formatDate.format(DateTime.parse(pesanan['created_at'])),
+              formatDate.format(DateTime.parse(widget.pesanan['created_at'])),
               Icons.calendar_today,
             ),
             _buildInfoCard(
               'Alamat Pengiriman',
-              pesanan['alamat_pengiriman'] ?? 'Tidak ada alamat',
+              widget.pesanan['alamat_pengiriman'] ?? 'Tidak ada alamat',
               Icons.location_on_outlined,
             ),
             const SizedBox(height: 24),
-
             _buildSectionTitle('Item yang Dipesan'),
-            // Menampilkan daftar produk yang dipesan
             for (var item in detailItems)
               _buildOrderItemTile(item, formatCurrency),
-
             const SizedBox(height: 24),
             _buildSectionTitle('Ringkasan Pembayaran'),
-            _buildSummaryCard(pesanan, formatCurrency),
+            _buildSummaryCard(widget.pesanan, formatCurrency),
           ],
         ),
       ),
     );
   }
 
+  // [PERBAIKAN] Widget baru untuk menampilkan status secara kondisional
+  Widget _buildStatusSection() {
+    // Tampilkan dropdown HANYA jika pengguna adalah admin
+    if (widget.userRole == 'admin') {
+      return Card(
+        elevation: 2,
+        margin: const EdgeInsets.only(bottom: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline, color: Color(0xFF8B4513)),
+              const SizedBox(width: 16),
+              Expanded(
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: _currentStatus,
+                    isExpanded: true,
+                    items:
+                        <String>[
+                          'diproses',
+                          'dikirim',
+                          'selesai',
+                          'dibatalkan',
+                        ].map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value.toUpperCase()),
+                          );
+                        }).toList(),
+                    onChanged:
+                        _isUpdatingStatus
+                            ? null
+                            : (newValue) {
+                              _updateStatus(newValue);
+                            },
+                  ),
+                ),
+              ),
+              if (_isUpdatingStatus)
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+            ],
+          ),
+        ),
+      );
+    } else {
+      // Jika bukan admin, tampilkan seperti biasa
+      return _buildInfoCard(
+        'Status',
+        _currentStatus.replaceAll('_', ' ').toUpperCase(),
+        Icons.info_outline,
+      );
+    }
+  }
+  
   Widget _buildSectionTitle(String title) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
